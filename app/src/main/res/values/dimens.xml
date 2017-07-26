@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+     <dimen name="camera_bottom_padding">10dp</dimen>
+     <dimen name="player_tag_text_size">20sp</dimen>
+
+</resources>
