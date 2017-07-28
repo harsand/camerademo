@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context="com.hxiong.camerademo.CameraDemoActivity">
 
-    <SurfaceView
+    <TextureView
         android:id="@+id/camera_demo_surface"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

@@ -3,32 +3,45 @@ package com.hxiong.camerademo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.view.SurfaceView;
+import android.util.DisplayMetrics;
+import android.view.TextureView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 
 import com.hxiong.camerademo.impl.CameraDemoManagerImpl;
+import com.hxiong.camerademo.params.PictureParameters;
 import com.hxiong.camerademo.util.LogUtils;
-import com.hxiong.camerademo.util.SurfaceControl;
+import com.hxiong.camerademo.util.SurfaceTextureControl;
 
 public class CameraDemoActivity extends BaseActivity {
 
+    private DisplayMetrics mMetric;
+
     private CameraDemoManagerImpl mCameraDemoManagerImpl;
-    private SurfaceControl mSurfaceControl;
+    private SurfaceTextureControl mControl;
     private ImageView mSwitchBtn;
     private ImageView mVideoBtn;
     private ImageView mCaptureBtn;
 
+    private CameraDemo mFrontCamera;   //前置摄像头，cameraId 为 1
+    private CameraDemo mBackCamera;    //后置摄像头，cameraId 为 0
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        mMetric = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(mMetric);
         setContentView(R.layout.activity_camera_demo);
         init();
     }
 
     private void init(){
-        SurfaceView surfaceView=(SurfaceView)findViewById(R.id.camera_demo_surface);
-        mSurfaceControl=new SurfaceControl(surfaceView);
+        TextureView textureView=(TextureView)findViewById(R.id.camera_demo_surface);
+        mControl=new SurfaceTextureControl(textureView,mMetric);
+
         mSwitchBtn=(ImageView)findViewById(R.id.camera_switch);
         mVideoBtn=(ImageView)findViewById(R.id.camera_video);
         mCaptureBtn=(ImageView)findViewById(R.id.camera_capture);
@@ -85,10 +98,16 @@ public class CameraDemoActivity extends BaseActivity {
         }
     };
 
+    private CameraDemo.PictureCallback mPictureCallback=new CameraDemo.PictureCallback() {
+
+
+    };
+
     private Handler mHandler=new Handler(){
 
         @Override
         public void handleMessage(Message msg) {
+            LogUtils.logI("handleMessage msg.what="+msg.what);
             switch (msg.what){
                 case MSG_CAMERA_OPEN:
                     handleCameraOpen((CameraDemo) msg.obj,msg.arg1);
@@ -112,8 +131,12 @@ public class CameraDemoActivity extends BaseActivity {
 
     ////////////// handle msg here
     private void handleCameraOpen(CameraDemo camera,int id){
-         mSurfaceControl.setCamera(camera);
-
+         if(id==0){
+             mBackCamera=camera;
+         }else if(id==1) {
+             mFrontCamera = camera;
+         }
+         mControl.setCamera(camera);
     }
 
     private void handleCameraSwitch(){
@@ -125,7 +148,11 @@ public class CameraDemoActivity extends BaseActivity {
     }
 
     private void handleCameraCapture(){
+        if(mBackCamera!=null){
+            PictureParameters params=mBackCamera.getPictureParameters();
 
+            mBackCamera.takePicture(params,mPictureCallback);
+        }
     }
 
     @Override

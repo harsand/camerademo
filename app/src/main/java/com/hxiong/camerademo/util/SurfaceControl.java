@@ -1,6 +1,7 @@
 package com.hxiong.camerademo.util;
 
 import android.hardware.camera2.CameraCaptureSession;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -32,11 +33,21 @@ public class SurfaceControl implements SurfaceHolder.Callback,CameraDemo.Preview
                  PreviewParameters params=mCameraDemo.getPreviewParameters();
                  params.setPreviewSurface(mSurfaceView.getHolder().getSurface());
                  mCameraDemo.startPreview(params,this);
+//                 Size[] sizes=params.getPreviewSizes();
+//                 if(sizes!=null) {
+//                     for (Size size : sizes) {
+//                         LogUtils.logD("size is <" + size.getWidth() + "," + size.getHeight() + ">");
+//                     }
+//                 }
              }
          }else{  //transform to other camera
              mCameraDemo.stopPreview();
 
          }
+    }
+
+    public Surface getSurface(){
+        return mSurfaceView.getHolder().getSurface();
     }
 
     @Override

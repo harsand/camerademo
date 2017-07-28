@@ -13,22 +13,70 @@ import com.hxiong.camerademo.params.RecordingParameters;
 
 public interface CameraDemo {
 
-      public CameraState getCameraState();
+    /**
+     * 获取Camera当前的状态
+     * @return 当前的camera状态
+     */
+     CameraState getCameraState();
 
-      public PreviewParameters getPreviewParameters();
+    /**
+     *  获取preview相关参数
+     * @return camera preview相关参数集合
+     */
+     public PreviewParameters getPreviewParameters();
 
+    /**
+     * 启动preview
+     * @param params  需要设置的preview参数
+     * @param callback 回调函数
+     * @return 返回OK表示成功，否则失败
+     */
       public int startPreview(PreviewParameters params,PreviewCallback callback);
 
+     /**
+      * 停止preview显示
+      * @return 返回OK表示成功，否则失败
+      */
       public int stopPreview();
 
+     /**
+      * 获取拍照相关参数
+      * @return
+      */
       public PictureParameters getPictureParameters();
 
+     /**
+      * 开始进行拍照
+      * @param params 需要设置的拍照参数
+      * @param callback 回调函数
+      * @return  返回OK表示成功，否则失败
+      */
       public int takePicture(PictureParameters params,PictureCallback callback);
 
+     /**
+      * 取消拍照
+      * @return 返回OK表示成功，否则失败
+      */
+      public int cancelCapture();
+
+     /**
+      * 获取录制相关的参数
+      * @return
+      */
       public RecordingParameters getRecordingParameters();
 
+     /**
+      * 启动录制
+      * @param params 需要设置的录制参数
+      * @param callback 回调函数
+      * @return 返回OK表示成功，否则失败
+      */
       public int startRecording(RecordingParameters params,RecordingCallback callback);
 
+     /**
+      * 停止录制
+      * @return 返回OK表示成功，否则失败
+      */
       public int stopRecording();
 
      /**

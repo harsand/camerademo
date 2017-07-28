@@ -5,6 +5,9 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
+import android.media.Image;
+import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -41,9 +44,16 @@ public class CameraDemoImpl implements CameraDemo{
      //session
      private CameraCaptureSession mSession;
 
+     //for capture buffer data
+     private ImageReader mImageReader;
+
      //session callback
      private CameraCaptureSession.CaptureCallback mCaptureCallback=new CameraCaptureSession.CaptureCallback(){
 
+         @Override
+         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+             super.onCaptureCompleted(session, request, result);
+         }
      };
 
 
@@ -83,12 +93,10 @@ public class CameraDemoImpl implements CameraDemo{
     @Override
     public PreviewParameters getPreviewParameters() {
         try {
-            CaptureRequest.Builder builder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            if(mPreviewParameters==null){
-                mPreviewParameters=new PreviewParameters();
-                mPreviewParameters.setCharacteristics(mCameraCharacteristics);  //just one
+            if(mPreviewParameters==null){   //just once
+                CaptureRequest.Builder builder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                mPreviewParameters=new PreviewParameters(mCameraCharacteristics,builder);
             }
-            mPreviewParameters.setBuilder(builder);
             return mPreviewParameters;
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -100,7 +108,7 @@ public class CameraDemoImpl implements CameraDemo{
     public int startPreview(final PreviewParameters params, final PreviewCallback callback) {
         if(mCameraState==CameraState.IDLE) {
             try {
-                mCameraDevice.createCaptureSession(params.getOutputSurface(), new CameraCaptureSession.StateCallback() {
+                mCameraDevice.createCaptureSession(params.getOutputSurfaces(), new CameraCaptureSession.StateCallback() {
                     @Override
                     public void onConfigured(@NonNull CameraCaptureSession session) {
                         mSession = session;
@@ -144,11 +152,10 @@ public class CameraDemoImpl implements CameraDemo{
     @Override
     public PictureParameters getPictureParameters() {
         try {
-            CaptureRequest.Builder builder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             if(mPictureParameters==null){
-                mPictureParameters=new PictureParameters();
+                CaptureRequest.Builder builder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+                mPictureParameters=new PictureParameters(mCameraCharacteristics,builder);
             }
-            mPictureParameters.setBuilder(builder);
             return mPictureParameters;
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -158,17 +165,27 @@ public class CameraDemoImpl implements CameraDemo{
 
     @Override
     public int takePicture(PictureParameters params, PictureCallback callback) {
+        if(mCameraState==CameraState.PREVIEW){
+           //stopPreview();
+
+        }
+
+        return 0;
+    }
+
+    @Override
+    public int cancelCapture() {
+
         return 0;
     }
 
     @Override
     public RecordingParameters getRecordingParameters() {
         try {
-            CaptureRequest.Builder builder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            if(mRecordingParameters==null){
-                mRecordingParameters=new RecordingParameters();
+            if(mRecordingParameters==null){  //just once
+                CaptureRequest.Builder builder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+                mRecordingParameters=new RecordingParameters(mCameraCharacteristics,builder);
             }
-            mRecordingParameters.setBuilder(builder);
             return mRecordingParameters;
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -184,6 +201,27 @@ public class CameraDemoImpl implements CameraDemo{
     @Override
     public int stopRecording() {
         return 0;
+    }
+
+    //
+    private void createImageReader(final PictureParameters params){
+
+        mImageReader=ImageReader.newInstance(params.getPictureWidth(),params.getPictureHeight(),params.getPictureFormat(),2);
+        mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                savePicture(reader,params);
+            }
+        },mHandler);
+        params.setPictureSurface(mImageReader.getSurface());  //
+    }
+
+    private void savePicture(ImageReader reader,final PictureParameters params){
+        Image image=reader.acquireLatestImage();
+        //todo
+
+        image.close();
+        mImageReader.close();
     }
 
     class CameraDemoHandler extends Handler{
