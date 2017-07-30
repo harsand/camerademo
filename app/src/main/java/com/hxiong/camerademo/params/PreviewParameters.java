@@ -40,7 +40,12 @@ public class PreviewParameters extends Parameters {
      * @return 如果无法匹配返回参考大小，否则返回匹配大小
      */
       public Size getNearPreviewSize(int referWidth,int referHeight){
+           Size[] sizes=getPreviewSizes();
+           if(sizes!=null){
+               for(Size size:sizes){
 
+               }
+           }
            return new Size(referHeight,referWidth);
       }
 

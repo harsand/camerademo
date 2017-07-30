@@ -110,7 +110,7 @@ public interface CameraDemo {
      /**
      *
      */
-      public static enum CameraState{
+     public static enum CameraState{
 
           IDLE      (0),
           PREVIEW   (1),

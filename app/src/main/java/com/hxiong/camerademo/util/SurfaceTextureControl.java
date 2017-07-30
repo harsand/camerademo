@@ -29,17 +29,18 @@ public class SurfaceTextureControl implements TextureView.SurfaceTextureListener
     }
 
     public void setCamera(CameraDemo camera){
-        if(mCameraDemo==null){  //new camera
-            mCameraDemo=camera;
-            if(isSurfaceCreated){
-              //  PreviewParameters params=mCameraDemo.getPreviewParameters();
-             //   params.setPreviewSurface(mSurfaceView.getHolder().getSurface());
-             //   mCameraDemo.startPreview(params,this);
-
-            }
-        }else{  //transform to other camera
+        if(mCameraDemo!=null){  // we need to stoppreview
             mCameraDemo.stopPreview();
+        }
+        mCameraDemo=camera;  //设置新的camera
 
+        if(isSurfaceCreated) {
+            PreviewParameters params=mCameraDemo.getPreviewParameters();
+            Size previewSize=params.getNearPreviewSize(mMetric.widthPixels,mMetric.heightPixels);
+            SurfaceTexture surface=mTextureView.getSurfaceTexture();
+            surface.setDefaultBufferSize(previewSize.getWidth(),previewSize.getHeight());
+            params.setPreviewSurface(new Surface(surface));
+            mCameraDemo.startPreview(params,this);
         }
     }
 

@@ -4,8 +4,8 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
-    <color name="camera_bottom_color">#66373535</color>
+    <color name="camera_bottom_color">#66484646</color>
 
     <color name="camera_btn_normal_color">#0053f28d</color>
-    <color name="camera_btn_press_color">#6653f28d</color>
+    <color name="camera_btn_press_color">#6687f5af</color>
 </resources>

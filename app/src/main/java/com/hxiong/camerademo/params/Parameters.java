@@ -24,6 +24,16 @@ public abstract class Parameters {
         this.outputSurfaces=new ArrayList<Surface>();
     }
 
+    /**
+     * 考虑到原来builder设置了参数之后无法修改，也无法移除
+     * 提供此api来重新设置builder，也就是重新设置参数
+     * @param builder 参数集合
+     */
+    public void setRequestBuilder(CaptureRequest.Builder builder){
+        this.mBuilder=builder;
+        this.outputSurfaces.clear();  //有必要移除之前所有的surface
+    }
+
     protected void setSurface(Surface preSurface,Surface curSurface){
         if(preSurface!=null){
             mBuilder.removeTarget(preSurface);   //try to remove

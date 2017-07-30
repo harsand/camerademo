@@ -51,6 +51,9 @@ public class CameraDemoActivity extends BaseActivity {
         mCaptureBtn.setOnClickListener(mClickListener);
 
         mCameraDemoManagerImpl=new CameraDemoManagerImpl(this);
+        if(!mCameraDemoManagerImpl.hasFrontCamera()){  //如果没有两个摄像头，则不显示切换按钮
+            mSwitchBtn.setVisibility(View.GONE);
+        }
         if(mCameraDemoManagerImpl.hasCamera()){
             mCameraDemoManagerImpl.openCamera("0",mCameraCallback);
         }else{
@@ -100,7 +103,6 @@ public class CameraDemoActivity extends BaseActivity {
 
     private CameraDemo.PictureCallback mPictureCallback=new CameraDemo.PictureCallback() {
 
-
     };
 
     private Handler mHandler=new Handler(){
@@ -132,7 +134,7 @@ public class CameraDemoActivity extends BaseActivity {
     ////////////// handle msg here
     private void handleCameraOpen(CameraDemo camera,int id){
          if(id==0){
-             mBackCamera=camera;
+             mBackCamera = camera;
          }else if(id==1) {
              mFrontCamera = camera;
          }
@@ -140,7 +142,15 @@ public class CameraDemoActivity extends BaseActivity {
     }
 
     private void handleCameraSwitch(){
-
+        if(mBackCamera==null){   //当前使用的是前置摄像头
+            mCameraDemoManagerImpl.closeCamera("1");
+            mFrontCamera=null;
+            mCameraDemoManagerImpl.openCamera("0",mCameraCallback);
+        }else{   //当前使用的是后置摄像头，切换成前置
+            mCameraDemoManagerImpl.closeCamera("0");
+            mBackCamera=null;
+            mCameraDemoManagerImpl.openCamera("1",mCameraCallback);
+        }
     }
 
     private void handleCameraRecord(){

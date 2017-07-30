@@ -115,7 +115,16 @@ public class CameraDemoManagerImpl {
     public boolean hasCamera(){
          String[] cameraIds=getCameraIdList();
          return (cameraIds!=null&&cameraIds.length>0);
-     }
+    }
+
+    /**
+     * 判断是否有前置摄像头
+     * @return 如果cameraId 数目大于1，返回true，否则返回false
+     */
+    public boolean hasFrontCamera(){
+        String[] cameraIds=getCameraIdList();
+        return (cameraIds!=null&&cameraIds.length>1);
+    }
 
      //common api from CameraManager
      public String[] getCameraIdList(){

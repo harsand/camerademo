@@ -71,13 +71,32 @@ public class CameraDemoImpl implements CameraDemo{
          if(mCameraDevice!=null){
              try {
                  LogUtils.logD("CameraDemoImpl close().");
+                 closeInternal();
                  mCameraDevice.close();
              }catch (Exception e){
                  e.printStackTrace();
              }finally {
+                 mCameraState = CameraState.IDLE;   //close之后变成idl，应该设置一个新的状态会更好
                  mCameraDevice=null;
                  mHandlerThread.quit();
              }
+         }
+     }
+
+     private void closeInternal(){
+         switch (mCameraState){
+             case PREVIEW:
+                 stopPreview();
+                 break;
+             case CAPTURE:
+                 cancelCapture();
+                 break;
+             case RECORDING:
+                 stopRecording();
+                 break;
+             default:
+                 LogUtils.logD("closeInternal state is "+mCameraState);
+                 break;
          }
      }
 
@@ -138,6 +157,7 @@ public class CameraDemoImpl implements CameraDemo{
     public int stopPreview() {
         if(mCameraState==CameraState.PREVIEW) {
             try {
+                LogUtils.logD("stopPreview close().");
                 mSession.stopRepeating();
                 mSession.close();  //need or no need
                 mCameraState = CameraState.IDLE;
