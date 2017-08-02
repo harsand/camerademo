@@ -12,6 +12,7 @@ public class BaseActivity extends Activity {
      protected static final int MSG_CAMERA_OPEN = 1;
      protected static final int MSG_CAMERA_SWITCH = 2;
      protected static final int MSG_CAMERA_RECORD= 3;
-    protected static final int MSG_CAMERA_CAPTURE= 4;
+     protected static final int MSG_CAMERA_CAPTURE= 4;
+     protected static final int MSG_CAMERA_PREVIEW= 5;
 
 }

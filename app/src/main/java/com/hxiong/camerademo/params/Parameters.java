@@ -2,6 +2,8 @@ package com.hxiong.camerademo.params;
 
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.util.Size;
 import android.view.Surface;
 
 import java.util.ArrayList;
@@ -43,6 +45,22 @@ public abstract class Parameters {
             mBuilder.addTarget(curSurface);
             outputSurfaces.add(curSurface);
         }
+    }
+
+    protected Size[] getPreviewSizes(Class<?> klass){
+        if(mCharacteristics!=null) {
+            StreamConfigurationMap map = mCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            return map.getOutputSizes(klass);
+        }
+        return null;
+    }
+
+    protected int[] getOutputFormats(){
+        if(mCharacteristics!=null) {
+            StreamConfigurationMap map = mCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            return map.getOutputFormats();
+        }
+        return null;
     }
 
     public List<Surface> getOutputSurfaces(){

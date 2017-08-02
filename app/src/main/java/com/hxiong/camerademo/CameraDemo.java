@@ -100,7 +100,12 @@ public interface CameraDemo {
       }
 
       public static interface PictureCallback{
-
+          public void onConfigured(CameraCaptureSession session);
+          public void onFailure(int reason);
+          //表示正在将数据写到sdcard，这时候可以进行preview，但是不能进行拍照
+          public void onPictureSaving(String picturePath);
+          //收到这个消息表示拍照已经完成，即保存到sdcard ,可以进行下一次拍照
+          public void onPictureTaken(String picturePath);
       }
 
       public static interface RecordingCallback{

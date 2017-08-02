@@ -1,15 +1,22 @@
 package com.hxiong.camerademo;
 
+import android.content.Context;
+import android.graphics.ImageFormat;
+import android.hardware.SensorManager;
+import android.hardware.camera2.CameraCaptureSession;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
+import android.util.Size;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
 import com.hxiong.camerademo.impl.CameraDemoManagerImpl;
+import com.hxiong.camerademo.impl.SensorManagerImpl;
+import com.hxiong.camerademo.impl.StorageManagerImpl;
 import com.hxiong.camerademo.params.PictureParameters;
 import com.hxiong.camerademo.util.LogUtils;
 import com.hxiong.camerademo.util.SurfaceTextureControl;
@@ -19,6 +26,8 @@ public class CameraDemoActivity extends BaseActivity {
     private DisplayMetrics mMetric;
 
     private CameraDemoManagerImpl mCameraDemoManagerImpl;
+    private StorageManagerImpl mStorageManagerImpl;
+    private SensorManagerImpl mSensorManagerImpl;
     private SurfaceTextureControl mControl;
     private ImageView mSwitchBtn;
     private ImageView mVideoBtn;
@@ -26,6 +35,9 @@ public class CameraDemoActivity extends BaseActivity {
 
     private CameraDemo mFrontCamera;   //前置摄像头，cameraId 为 1
     private CameraDemo mBackCamera;    //后置摄像头，cameraId 为 0
+
+    //是否正在拍照
+    private boolean isCapture = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +63,9 @@ public class CameraDemoActivity extends BaseActivity {
         mCaptureBtn.setOnClickListener(mClickListener);
 
         mCameraDemoManagerImpl=new CameraDemoManagerImpl(this);
+        mStorageManagerImpl = new StorageManagerImpl(this);
+        SensorManager sensorManager=(SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        mSensorManagerImpl=new SensorManagerImpl(sensorManager);
         if(!mCameraDemoManagerImpl.hasFrontCamera()){  //如果没有两个摄像头，则不显示切换按钮
             mSwitchBtn.setVisibility(View.GONE);
         }
@@ -103,6 +118,29 @@ public class CameraDemoActivity extends BaseActivity {
 
     private CameraDemo.PictureCallback mPictureCallback=new CameraDemo.PictureCallback() {
 
+        @Override
+        public void onConfigured(CameraCaptureSession session) {
+
+        }
+
+        @Override
+        public void onFailure(int reason) {
+            LogUtils.logD("PictureCallback onFailure call");
+            mHandler.sendEmptyMessage(MSG_CAMERA_PREVIEW); //also need to start preview
+            isCapture=false;
+        }
+
+        @Override
+        public void onPictureSaving(String picturePath) {
+            LogUtils.logD("onPictureSaving picturePath is "+picturePath);
+            mHandler.sendEmptyMessage(MSG_CAMERA_PREVIEW);
+        }
+
+        @Override
+        public void onPictureTaken(String picturePath) {
+            LogUtils.logD("onPictureTaken picturePath is "+picturePath);
+            isCapture=false;
+        }
     };
 
     private Handler mHandler=new Handler(){
@@ -123,7 +161,9 @@ public class CameraDemoActivity extends BaseActivity {
                 case MSG_CAMERA_CAPTURE:
                     handleCameraCapture();
                     break;
-
+                case MSG_CAMERA_PREVIEW:
+                    handleCameraPreview();
+                    break;
                 default:
                     super.handleMessage(msg);
                     break;
@@ -158,11 +198,58 @@ public class CameraDemoActivity extends BaseActivity {
     }
 
     private void handleCameraCapture(){
-        if(mBackCamera!=null){
-            PictureParameters params=mBackCamera.getPictureParameters();
-
-            mBackCamera.takePicture(params,mPictureCallback);
+        if(isCapture){
+            LogUtils.logE("now is capturing,please wait.");
         }
+        isCapture=true;
+        CameraDemo cameraDemo = mBackCamera==null?mFrontCamera:mBackCamera;
+        try {
+            PictureParameters params = cameraDemo.getPictureParameters();
+            params.setPreviewSurface(mControl.getSurface());
+            Size pictureSize=params.getMaxPictureSizes(mMetric.widthPixels,mMetric.heightPixels);
+            params.setPictureSize(pictureSize.getWidth(),pictureSize.getHeight());
+            params.setPictureFormat(ImageFormat.JPEG);
+            params.setPictureOrientation(getPictureRotation());
+            params.setPicturePath(mStorageManagerImpl.createPicturePath());
+            cameraDemo.takePicture(params, mPictureCallback);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private void handleCameraPreview(){
+         mControl.restartPreview();
+    }
+
+    private PictureParameters.Rotation getPictureRotation(){
+        int orientation=mSensorManagerImpl.getGsensorOrientation();
+        LogUtils.logD("getGsensorOrientation orientation="+orientation);
+
+        switch (orientation){
+            case SensorManagerImpl.GSENSOE_ORIENTATION_0:
+                return PictureParameters.Rotation.ROTATION_0;
+            case SensorManagerImpl.GSENSOE_ORIENTATION_90:
+                return PictureParameters.Rotation.ROTATION_90;
+            case SensorManagerImpl.GSENSOE_ORIENTATION_180:
+                return PictureParameters.Rotation.ROTATION_180;
+            case SensorManagerImpl.GSENSOE_ORIENTATION_270:
+                return PictureParameters.Rotation.ROTATION_270;
+            default: break;
+        }
+        return PictureParameters.Rotation.ROTATION_0;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mSensorManagerImpl.enableSensor();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mSensorManagerImpl.disableSensor();
     }
 
     @Override
@@ -170,5 +257,7 @@ public class CameraDemoActivity extends BaseActivity {
         super.onDestroy();
         mCameraDemoManagerImpl.release();
         mCameraDemoManagerImpl=null;
+        mSensorManagerImpl.destroy();
+        mSensorManagerImpl=null;
     }
 }

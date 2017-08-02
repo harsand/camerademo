@@ -3,7 +3,6 @@ package com.hxiong.camerademo.params;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.util.Size;
 import android.view.Surface;
 
@@ -26,11 +25,7 @@ public class PreviewParameters extends Parameters {
       }
 
       public Size[] getPreviewSizes(){
-          if(mCharacteristics!=null) {
-              StreamConfigurationMap map = mCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-              return map.getOutputSizes(SurfaceTexture.class);
-          }
-          return new Size[0];
+          return getPreviewSizes(SurfaceTexture.class);
       }
 
     /**

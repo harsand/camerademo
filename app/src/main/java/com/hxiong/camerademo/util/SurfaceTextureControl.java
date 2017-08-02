@@ -33,8 +33,15 @@ public class SurfaceTextureControl implements TextureView.SurfaceTextureListener
             mCameraDemo.stopPreview();
         }
         mCameraDemo=camera;  //设置新的camera
+        restartPreview();
+    }
 
-        if(isSurfaceCreated) {
+    public Surface getSurface(){
+        return new Surface(mTextureView.getSurfaceTexture());
+    }
+
+    public void restartPreview(){
+        if(isSurfaceCreated&&mCameraDemo!=null&&mCameraDemo.getCameraState()== CameraDemo.CameraState.IDLE) {
             PreviewParameters params=mCameraDemo.getPreviewParameters();
             Size previewSize=params.getNearPreviewSize(mMetric.widthPixels,mMetric.heightPixels);
             SurfaceTexture surface=mTextureView.getSurfaceTexture();
@@ -49,7 +56,7 @@ public class SurfaceTextureControl implements TextureView.SurfaceTextureListener
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         LogUtils.logD("onSurfaceTextureAvailable width="+width+" height="+height);
         isSurfaceCreated=true;
-        if(mCameraDemo!=null){
+        if(mCameraDemo!=null&&mCameraDemo.getCameraState()== CameraDemo.CameraState.IDLE){
             PreviewParameters params=mCameraDemo.getPreviewParameters();
             Size previewSize=params.getNearPreviewSize(mMetric.widthPixels,mMetric.heightPixels);
             surface.setDefaultBufferSize(previewSize.getWidth(),previewSize.getHeight());

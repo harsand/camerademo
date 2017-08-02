@@ -21,6 +21,12 @@ import com.hxiong.camerademo.params.RecordingParameters;
 import com.hxiong.camerademo.util.Error;
 import com.hxiong.camerademo.util.LogUtils;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+
 /**
  * Created by hxiong on 2017/6/25 18:49.
  * Email 2509477698@qq.com
@@ -46,6 +52,8 @@ public class CameraDemoImpl implements CameraDemo{
 
      //for capture buffer data
      private ImageReader mImageReader;
+     private byte[] mPictureData = new byte[0];
+     private int mPictureDataSize = 0;
 
      //session callback
      private CameraCaptureSession.CaptureCallback mCaptureCallback=new CameraCaptureSession.CaptureCallback(){
@@ -56,6 +64,8 @@ public class CameraDemoImpl implements CameraDemo{
          }
      };
 
+     //private picture callback
+     private PictureCallback mPictureCallback;
 
 
      protected CameraDemoImpl(CameraDevice camera,CameraCharacteristics characteristics){
@@ -184,13 +194,36 @@ public class CameraDemoImpl implements CameraDemo{
     }
 
     @Override
-    public int takePicture(PictureParameters params, PictureCallback callback) {
+    public int takePicture(final PictureParameters params, final PictureCallback callback) {
         if(mCameraState==CameraState.PREVIEW){
-           //stopPreview();
-
+           stopPreview();  //停止preview
+            try {
+                createImageReader(params);  //拍照参数的设置
+                //可以在PictureParameters 设置不同的参数，用于创建不同的CaptureSession
+                mCameraDevice.createCaptureSession(params.getOutputSurfaces(), new CameraCaptureSession.StateCallback() {
+                    @Override
+                    public void onConfigured(@NonNull CameraCaptureSession session) {
+                        mSession=session;
+                        try {
+                            mSession.capture(params.getCaptureRequest(),mCaptureCallback,mHandler);
+                            callback.onConfigured(mSession);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    @Override
+                    public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                        callback.onFailure(-1);
+                    }
+                },mHandler);
+                mPictureCallback=callback;
+                mCameraState = CameraState.CAPTURE;
+                return Error.OK;
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
         }
-
-        return 0;
+        return Error.BAD;
     }
 
     @Override
@@ -237,11 +270,64 @@ public class CameraDemoImpl implements CameraDemo{
     }
 
     private void savePicture(ImageReader reader,final PictureParameters params){
-        Image image=reader.acquireLatestImage();
-        //todo
-
+        Image image=reader.acquireNextImage();
+        LogUtils.logI("savePicture image.getWidth()="+image.getWidth()+" image.getHeight()="+image.getHeight()+
+                " image.getFormat()="+image.getFormat()+" image.getTimestamp()="+image.getTimestamp());
+        ByteBuffer buffer=image.getPlanes()[0].getBuffer();
+        String picPath=params.getPicturePath();
+        LogUtils.logI("savePicture buffer.remaining()="+buffer.remaining());
+        mCameraState = CameraState.IDLE;
+        if(mPictureCallback!=null){
+            mPictureCallback.onPictureSaving(picPath);
+        }
+        onSavePicture(buffer,picPath);
         image.close();
         mImageReader.close();
+    }
+
+    private void onSavePicture(ByteBuffer buffer,final String picPath){
+         //copy buffer
+         int bufferSize=buffer.remaining();
+         if(mPictureData.length<bufferSize){
+             mPictureData=new byte[bufferSize];
+         }
+        mPictureDataSize=bufferSize;
+        //因为mPictureData 的大小可能超过bufferSize，所以不能拷贝mPictureData.length 的大小
+        buffer.get(mPictureData,0,mPictureDataSize);
+        //创建一个线程去做保存图片
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                saveDataToFile(mPictureData,mPictureDataSize,picPath);
+            }
+        }).start();
+    }
+
+    private void saveDataToFile(byte[] data,int size,String path){
+        FileOutputStream fous=null;
+        try {
+            fous=new FileOutputStream(path);
+            fous.write(data,0,size);
+            fous.flush();  //must
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }catch (Exception e){
+            e.printStackTrace();
+        } finally {
+            closeOutputStream(fous);
+        }
+        if(mPictureCallback!=null){
+            mPictureCallback.onPictureTaken(path);
+        }
+    }
+
+    private void closeOutputStream(OutputStream ous){
+        try {
+            if(ous!=null) ous.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     class CameraDemoHandler extends Handler{
@@ -255,5 +341,7 @@ public class CameraDemoImpl implements CameraDemo{
             super.handleMessage(msg);
         }
     }
+
+
 
 }
