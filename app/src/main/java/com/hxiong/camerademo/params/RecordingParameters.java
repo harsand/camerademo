@@ -6,6 +6,8 @@ import android.media.MediaRecorder;
 import android.util.Size;
 import android.view.Surface;
 
+import com.hxiong.camerademo.util.LogUtils;
+
 /**
  * Created by hxiong on 2017/7/23 21:50.
  * Email 2509477698@qq.com
@@ -46,13 +48,29 @@ public class RecordingParameters extends Parameters {
     }
 
     public Size getNearVideoSize(int referWidth, int referHeight){
+        if(referWidth<referHeight){  //保证宽度大于高度
+            int temp=referWidth;
+            referWidth=referHeight;
+            referHeight=temp;
+        }
+        int sizeScale=referWidth*10/referHeight;
+        Size  tempSize=null;
         Size[] sizes=getVideoSizes();
         if(sizes!=null){
             for(Size size:sizes){
-               return size;
+                LogUtils.logI("VideoSizes width="+size.getWidth()+" height="+size.getHeight());
+                if(tempSize==null) tempSize=size;  //确保tempSize 必须是VideoSizes 中的一个
+                //宽高比例小数点一位相等，乘以10就是为了保存小数点后一位
+                if((size.getWidth()*10/size.getHeight())==sizeScale){
+                    //如果误差不超过20，就认为是找到了
+                    if(Math.abs(size.getWidth()-referWidth)<20&&Math.abs(size.getHeight()-referHeight)<20){
+                        return size;
+                    }
+                }
             }
         }
-        return new Size(referHeight,referWidth);
+        //if(tempSize!=null) LogUtils.logD("tempSize width="+tempSize.getWidth()+" height="+tempSize.getHeight());
+        return tempSize==null?new Size(referWidth,referHeight):tempSize;
     }
 
     public void setOutputFile(String outputFile){

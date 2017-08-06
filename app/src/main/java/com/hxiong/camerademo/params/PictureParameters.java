@@ -6,6 +6,8 @@ import android.media.ImageReader;
 import android.util.Size;
 import android.view.Surface;
 
+import com.hxiong.camerademo.util.LogUtils;
+
 /**
  * Created by hxiong on 2017/7/23 21:42.
  * Email 2509477698@qq.com
@@ -33,13 +35,28 @@ public class PictureParameters extends Parameters {
      // public
 
       public Size getMaxPictureSizes(int referWidth,int referHeight){
+          if(referWidth<referHeight){  //保证宽度大于高度
+              int temp=referWidth;
+              referWidth=referHeight;
+              referHeight=temp;
+          }
+          Size  tempSize=null;
+          int sizeScale=referWidth*10/referHeight;
           Size[] sizes=getPictureSizes();
           if(sizes!=null){
               for(Size size:sizes){
-
+                  LogUtils.logI("PictureSizes width="+size.getWidth()+" height="+size.getHeight());
+                  //宽高比//宽高比例小数点一位相等，乘以10就是为了保存小数点后一位
+                  if((size.getWidth()*10/size.getHeight())==sizeScale){
+                      if(tempSize==null){
+                          tempSize=size;
+                      }else if(size.getWidth()>tempSize.getWidth()&&size.getHeight()>tempSize.getHeight()){
+                          tempSize=size;
+                      }
+                  }
               }
           }
-          return new Size(referHeight,referWidth);
+          return tempSize==null?new Size(referWidth,referHeight):tempSize;
       }
 
       //

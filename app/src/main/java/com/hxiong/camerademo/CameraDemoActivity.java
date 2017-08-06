@@ -159,7 +159,13 @@ public class CameraDemoActivity extends BaseActivity {
 
         @Override
         public void onFailure(int reason) {
+            LogUtils.logD("RecordingCallback onFailure call");
+           // mHandler.sendEmptyMessage(MSG_CAMERA_PREVIEW); //also need to start preview
+        }
 
+        @Override
+        public void onVideoTaken(String videoPath) {
+            LogUtils.logD("onVideoTaken videoPath is "+videoPath);
         }
     };
 
@@ -218,11 +224,11 @@ public class CameraDemoActivity extends BaseActivity {
         if(cameraDemo.getCameraState()== CameraDemo.CameraState.RECORDING){
             cameraDemo.stopRecording();
             mVideoBtn.setImageResource(R.mipmap.ic_video);
+            mHandler.sendEmptyMessage(MSG_CAMERA_PREVIEW); // tell to  restart preview
         }else{
             RecordingParameters params=cameraDemo.getRecordingParameters();
             params.setPreviewSurface(mControl.getSurface());
             params.setOutputFile(mStorageManagerImpl.createVideoPath());
-            LogUtils.logD("output file is "+mStorageManagerImpl.createVideoPath());
             Size videoSize=params.getNearVideoSize(mMetric.widthPixels,mMetric.heightPixels);
             params.setVideoSize(videoSize.getWidth(),videoSize.getHeight());
             cameraDemo.startRecording(params,mRecordingCallback);

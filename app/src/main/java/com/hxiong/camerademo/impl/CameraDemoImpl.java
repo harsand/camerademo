@@ -301,6 +301,10 @@ public class CameraDemoImpl implements CameraDemo{
                 mSession.stopRepeating();
                 mSession.close();
                 mCameraState = CameraState.IDLE;
+                //callback
+                if(mRecordingCallback!=null&&mRecordingParameters!=null){
+                    mRecordingCallback.onVideoTaken(mRecordingParameters.getOutputFile());
+                }
                 return Error.OK;
             } catch (CameraAccessException e) {
                 e.printStackTrace();
