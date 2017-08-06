@@ -36,6 +36,8 @@ public class SurfaceTextureControl implements TextureView.SurfaceTextureListener
         restartPreview();
     }
 
+    public TextureView getTextureView(){ return mTextureView;}
+
     public Surface getSurface(){
         return new Surface(mTextureView.getSurfaceTexture());
     }

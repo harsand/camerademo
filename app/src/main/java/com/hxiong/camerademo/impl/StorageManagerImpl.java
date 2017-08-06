@@ -20,24 +20,33 @@ public class StorageManagerImpl {
     protected static final String DCIM_DIR="/DCIM";
     protected static final String CAMERA_DEMO_DIR="/CameraDemo";
     protected static final String CAMERA_DATE_FORMAT="yyyy-MM";
+    protected static final String PICTURE_DIR="/picture";
     protected static final String PICTURE_PREFIX="/IMG_";
     protected static final String PICTURE_JPG=".jpg";
 
+    protected static final String VIDEO_DIR="/video";
+    protected static final String VIDEO_PREFIX="/VIDEO_";
+    protected static final String VIDEO_MP4=".mp4";
 
     private Context mContext;
     private SimpleDateFormat mDateFormat;
-    private String mPictureDir;
+    private String mDateDir;
 
     public StorageManagerImpl(Context context){
         this.mContext=context;
         mDateFormat=new SimpleDateFormat(DATE_FORMAT);
         SimpleDateFormat dateFormat=new SimpleDateFormat(CAMERA_DATE_FORMAT);
-        mPictureDir="/"+dateFormat.format(new Date());
+        mDateDir="/"+dateFormat.format(new Date());
     }
 
     public String createPicturePath(){
-        String pictureDir=getPicturePath();
+        String pictureDir=getPictureDirPath();
         return pictureDir+getPictureName();
+    }
+
+    public String createVideoPath(){
+        String videoDir=getVideoDirPath();
+        return videoDir+getVideoName();
     }
 
     /////////////////////内部实现
@@ -61,7 +70,16 @@ public class StorageManagerImpl {
     }
 
     private String getPicturePath(){
-        File pictureDir=new File(getCameraDemoPath()+mPictureDir);
+        File pictureDir=new File(getCameraDemoPath()+PICTURE_DIR);
+        if(!pictureDir.exists()){
+            LogUtils.logD("create  dir path: "+pictureDir.getPath());
+            pictureDir.mkdir();
+        }
+        return pictureDir.getPath();
+    }
+
+    private String getPictureDirPath(){
+        File pictureDir=new File(getPicturePath()+mDateDir);
         if(!pictureDir.exists()){
             LogUtils.logD("create  dir path: "+pictureDir.getPath());
             pictureDir.mkdir();
@@ -71,5 +89,27 @@ public class StorageManagerImpl {
 
     private String getPictureName(){
         return PICTURE_PREFIX+mDateFormat.format(new Date())+PICTURE_JPG;
+    }
+
+    private String getVideoPath(){
+        File videoDir=new File(getCameraDemoPath()+VIDEO_DIR);
+        if(!videoDir.exists()){
+            LogUtils.logD("create  dir path: "+videoDir.getPath());
+            videoDir.mkdir();
+        }
+        return videoDir.getPath();
+    }
+
+    private String getVideoDirPath(){
+        File videoDir=new File(getVideoPath()+mDateDir);
+        if(!videoDir.exists()){
+            LogUtils.logD("create  dir path: "+videoDir.getPath());
+            videoDir.mkdir();
+        }
+        return videoDir.getPath();
+    }
+
+    private String getVideoName(){
+        return VIDEO_PREFIX+mDateFormat.format(new Date())+VIDEO_MP4;
     }
 }

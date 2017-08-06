@@ -1,6 +1,7 @@
 package com.hxiong.camerademo;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraCaptureSession;
@@ -18,8 +19,13 @@ import com.hxiong.camerademo.impl.CameraDemoManagerImpl;
 import com.hxiong.camerademo.impl.SensorManagerImpl;
 import com.hxiong.camerademo.impl.StorageManagerImpl;
 import com.hxiong.camerademo.params.PictureParameters;
+import com.hxiong.camerademo.params.RecordingParameters;
 import com.hxiong.camerademo.util.LogUtils;
 import com.hxiong.camerademo.util.SurfaceTextureControl;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class CameraDemoActivity extends BaseActivity {
 
@@ -143,6 +149,20 @@ public class CameraDemoActivity extends BaseActivity {
         }
     };
 
+    private CameraDemo.RecordingCallback mRecordingCallback=new CameraDemo.RecordingCallback() {
+
+
+        @Override
+        public void onConfigured(CameraCaptureSession session) {
+
+        }
+
+        @Override
+        public void onFailure(int reason) {
+
+        }
+    };
+
     private Handler mHandler=new Handler(){
 
         @Override
@@ -194,7 +214,20 @@ public class CameraDemoActivity extends BaseActivity {
     }
 
     private void handleCameraRecord(){
-
+        CameraDemo cameraDemo = mBackCamera==null?mFrontCamera:mBackCamera;
+        if(cameraDemo.getCameraState()== CameraDemo.CameraState.RECORDING){
+            cameraDemo.stopRecording();
+            mVideoBtn.setImageResource(R.mipmap.ic_video);
+        }else{
+            RecordingParameters params=cameraDemo.getRecordingParameters();
+            params.setPreviewSurface(mControl.getSurface());
+            params.setOutputFile(mStorageManagerImpl.createVideoPath());
+            LogUtils.logD("output file is "+mStorageManagerImpl.createVideoPath());
+            Size videoSize=params.getNearVideoSize(mMetric.widthPixels,mMetric.heightPixels);
+            params.setVideoSize(videoSize.getWidth(),videoSize.getHeight());
+            cameraDemo.startRecording(params,mRecordingCallback);
+            mVideoBtn.setImageResource(R.mipmap.ic_video_active);
+        }
     }
 
     private void handleCameraCapture(){
@@ -203,6 +236,18 @@ public class CameraDemoActivity extends BaseActivity {
         }
         isCapture=true;
         CameraDemo cameraDemo = mBackCamera==null?mFrontCamera:mBackCamera;
+        if(cameraDemo.getCameraState()== CameraDemo.CameraState.RECORDING){
+            snapshotCapture();
+        }else{
+            normalCapture(cameraDemo);
+        }
+    }
+
+    /**
+     * preview 状态下的拍照
+     * @param cameraDemo
+     */
+    private void normalCapture(CameraDemo cameraDemo){
         try {
             PictureParameters params = cameraDemo.getPictureParameters();
             params.setPreviewSurface(mControl.getSurface());
@@ -215,7 +260,55 @@ public class CameraDemoActivity extends BaseActivity {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
 
+    /**
+     * 录制状态下的拍照
+     */
+    private void snapshotCapture(){
+        try {
+            TextureView textureView=mControl.getTextureView();
+            Bitmap bitmap=textureView.getBitmap();  //直接从textureview上获取内容
+            if(bitmap!=null) {
+                saveBitmapAsPicture(bitmap);
+                bitmap.recycle();  //take care
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void saveBitmapAsPicture(final Bitmap bitmap){
+        /**
+         * 是应该创建一个新的线程来保存数据好，还是放到一个handler 线程去处理
+         * 需要根据实际情况来考虑，每次创建一个线程也是消耗时间的
+         */
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                onSavePicture(bitmap);
+            }
+        }).start();
+
+    }
+
+    private void onSavePicture(final Bitmap bitmap){
+        FileOutputStream fous=null;
+        try {
+            fous=new FileOutputStream(mStorageManagerImpl.createPicturePath());
+            bitmap.compress(Bitmap.CompressFormat.JPEG,100,fous);
+            fous.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        try {
+            if(fous!=null) fous.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        isCapture=false;  //very importance
     }
 
     private void handleCameraPreview(){
@@ -250,6 +343,11 @@ public class CameraDemoActivity extends BaseActivity {
     protected void onStop() {
         super.onStop();
         mSensorManagerImpl.disableSensor();
+        CameraDemo cameraDemo = mBackCamera==null?mFrontCamera:mBackCamera;
+        if(cameraDemo.getCameraState()== CameraDemo.CameraState.RECORDING){
+            cameraDemo.stopRecording();
+            mVideoBtn.setImageResource(R.mipmap.ic_video);
+        }
     }
 
     @Override

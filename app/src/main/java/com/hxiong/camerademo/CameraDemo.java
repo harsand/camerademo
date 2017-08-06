@@ -109,6 +109,8 @@ public interface CameraDemo {
       }
 
       public static interface RecordingCallback{
+          public void onConfigured(CameraCaptureSession session);
+          public void onFailure(int reason);
 
       }
 

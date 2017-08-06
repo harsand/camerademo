@@ -55,6 +55,9 @@ public class CameraDemoImpl implements CameraDemo{
      private byte[] mPictureData = new byte[0];
      private int mPictureDataSize = 0;
 
+     //for recorder
+     private RecorderManagerImpl mRecorderManager;
+
      //session callback
      private CameraCaptureSession.CaptureCallback mCaptureCallback=new CameraCaptureSession.CaptureCallback(){
 
@@ -67,8 +70,12 @@ public class CameraDemoImpl implements CameraDemo{
      //private picture callback
      private PictureCallback mPictureCallback;
 
+     //recording callback
+     private RecordingCallback mRecordingCallback;
 
-     protected CameraDemoImpl(CameraDevice camera,CameraCharacteristics characteristics){
+
+     protected CameraDemoImpl(RecorderManagerImpl recorderManager,CameraDevice camera,CameraCharacteristics characteristics){
+         this.mRecorderManager=recorderManager;
          this.mCameraDevice=camera;
          this.mCameraCharacteristics=characteristics;
          this.mCameraState=CameraState.IDLE;
@@ -247,13 +254,59 @@ public class CameraDemoImpl implements CameraDemo{
     }
 
     @Override
-    public int startRecording(RecordingParameters params, RecordingCallback callback) {
-        return 0;
+    public int startRecording(final RecordingParameters params, final RecordingCallback callback) {
+        if(mCameraState==CameraState.PREVIEW) {
+            stopPreview();  //停止preview
+        }else if(mCameraState==CameraState.CAPTURE){
+            cancelCapture();
+        }
+
+        try {
+            mRecorderManager.setupMediaRecorder(params);  //设置录制参数
+            params.setVideoSurface(mRecorderManager.getSurface()); //camera 数据送到recorder 的通道
+            mCameraDevice.createCaptureSession(params.getOutputSurfaces(), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession session) {
+                    mSession=session;
+                    try {
+                        mSession.setRepeatingRequest(params.getCaptureRequest(),mCaptureCallback,mHandler);
+                        mRecorderManager.start();  //run on this thread？？
+                        callback.onConfigured(mSession);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                    callback.onFailure(-1);
+                }
+            },mHandler);
+            mRecordingCallback=callback;
+            mCameraState=CameraState.RECORDING;
+            return Error.OK;
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        return Error.BAD;
     }
 
     @Override
     public int stopRecording() {
-        return 0;
+        if(mCameraState==CameraState.RECORDING) {
+            try {
+                LogUtils.logD("stopRecording().");
+                mRecorderManager.stop();
+                mSession.stopRepeating();
+                mSession.close();
+                mCameraState = CameraState.IDLE;
+                return Error.OK;
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return Error.BAD;
     }
 
     //
@@ -277,6 +330,7 @@ public class CameraDemoImpl implements CameraDemo{
         String picPath=params.getPicturePath();
         LogUtils.logI("savePicture buffer.remaining()="+buffer.remaining());
         mCameraState = CameraState.IDLE;
+        mSession.close();
         if(mPictureCallback!=null){
             mPictureCallback.onPictureSaving(picPath);
         }

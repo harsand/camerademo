@@ -24,12 +24,14 @@ public class CameraDemoManagerImpl {
 
     private Context mContext;
     private CameraManager mCameraManager;
+    private RecorderManagerImpl mRecorderManagerImpl;
     private ArrayList<CameraDemoImpl> mCameraImpls;
 
 
     public CameraDemoManagerImpl(Context context) {
         this.mContext = context;
         this.mCameraImpls=new ArrayList<CameraDemoImpl>();
+        this.mRecorderManagerImpl=new RecorderManagerImpl();
         checkCameraManager();
     }
 
@@ -69,7 +71,7 @@ public class CameraDemoManagerImpl {
                         LogUtils.logD("StateCallback onOpened()");
                         if (firstCallback) {
                             firstCallback = false;
-                            CameraDemoImpl cameraDemo=new CameraDemoImpl(camera,getCameraCharacteristics(cameraId));
+                            CameraDemoImpl cameraDemo=new CameraDemoImpl(mRecorderManagerImpl,camera,getCameraCharacteristics(cameraId));
                             mCameraImpls.add(cameraDemo);   //save it
                             callback.onOpen(cameraDemo,cameraId);
                         }
@@ -158,6 +160,7 @@ public class CameraDemoManagerImpl {
             cameraImpl.close();
         }
         mCameraImpls.clear();
+        mRecorderManagerImpl.destroy();
      }
 
      private boolean isCameraOpened(String cameraId){
