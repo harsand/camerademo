@@ -35,6 +35,7 @@ public class RecorderManagerImpl implements MediaRecorder.OnInfoListener,MediaRe
               mMediaRecorder.setVideoSize(params.getVideoWidth(), params.getVideoHeight());
               mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
               mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+              mMediaRecorder.setOrientationHint(params.getOrientationHint());
               mMediaRecorder.prepare();
               return Error.OK;
           } catch (Exception e) {

@@ -24,12 +24,14 @@ public class RecordingParameters extends Parameters {
 
     //
     private int mVideoEncodingBitRate;
+    private int mOrientationHint;
     private int mVideoFrameRate;
 
     public RecordingParameters(CameraCharacteristics characteristics, CaptureRequest.Builder builder){
         super(characteristics, builder);
         //default value
         mVideoEncodingBitRate=10000000;
+        mOrientationHint=90;
         mVideoFrameRate=30;
     }
 
@@ -108,6 +110,14 @@ public class RecordingParameters extends Parameters {
 
     public int getVideoFrameRate(){
         return  mVideoFrameRate;
+    }
+
+    public void setOrientationHint(int orientationHint){
+         mOrientationHint=orientationHint;
+    }
+
+    public int getOrientationHint(){
+         return mOrientationHint;
     }
 
 }

@@ -231,6 +231,7 @@ public class CameraDemoActivity extends BaseActivity {
             params.setOutputFile(mStorageManagerImpl.createVideoPath());
             Size videoSize=params.getNearVideoSize(mMetric.widthPixels,mMetric.heightPixels);
             params.setVideoSize(videoSize.getWidth(),videoSize.getHeight());
+            params.setOrientationHint(getVideoOrientationHint());
             cameraDemo.startRecording(params,mRecordingCallback);
             mVideoBtn.setImageResource(R.mipmap.ic_video_active);
         }
@@ -277,7 +278,6 @@ public class CameraDemoActivity extends BaseActivity {
             Bitmap bitmap=textureView.getBitmap();  //直接从textureview上获取内容
             if(bitmap!=null) {
                 saveBitmapAsPicture(bitmap);
-                bitmap.recycle();  //take care
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -293,6 +293,7 @@ public class CameraDemoActivity extends BaseActivity {
             @Override
             public void run() {
                 onSavePicture(bitmap);
+                bitmap.recycle();  //take care
             }
         }).start();
 
@@ -337,6 +338,12 @@ public class CameraDemoActivity extends BaseActivity {
             default: break;
         }
         return PictureParameters.Rotation.ROTATION_0;
+    }
+
+    private int getVideoOrientationHint(){
+        int orientation=mSensorManagerImpl.getGsensorOrientation();
+        LogUtils.logD("getVideoOrientationHint orientation="+orientation);
+        return 90*orientation;
     }
 
     @Override
